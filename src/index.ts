@@ -1,15 +1,28 @@
-import * as dotenv from "dotenv";
 import { OpenAI } from "langchain";
+import { SerpAPI, Calculator } from "langchain/tools";
+import { initializeAgentExecutor } from "langchain/agents";
 
-dotenv.config();
+const model = new OpenAI({ temperature: 0 });
+const tools = [
+  new SerpAPI(process.env.SERPAPI_API_KEY, {
+    location: "Tokyo,Japan",
+    hl: "ja",
+    gl: "jp",
+  }),
+  new Calculator(),
+];
 
-const model = new OpenAI({
-  modelName: "gpt-3.5-turbo",
-  openAIApiKey: process.env.OPENAI_API_KEY,
-});
-
-const res = await model.call(
-  "What would be a good company name a company that makes colorful socks?"
+const executor = await initializeAgentExecutor(
+  tools,
+  model,
+  "zero-shot-react-description"
 );
 
-console.log(res);
+console.log("Loaded agent.");
+
+const input = "みそきんとは...??";
+console.log(`Executing with input "${input}"...`);
+
+const result = await executor.call({ input });
+
+console.log(`Got output ${result.output}`);
