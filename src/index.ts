@@ -1,42 +1,64 @@
-import { OpenAI } from "langchain";
-import { CallbackManager } from "langchain/callbacks";
+import { ChatOpenAI } from "langchain/chat_models";
+import { HumanChatMessage, SystemChatMessage } from "langchain/schema";
+import {
+  SystemMessagePromptTemplate,
+  HumanMessagePromptTemplate,
+  ChatPromptTemplate,
+} from "langchain/prompts";
 
-// To enable streaming, we pass in `streaming: true` to the LLM constructor.
-// Additionally, we pass in a handler for the `handleLLMNewToken` event.
-const chat = new OpenAI({
-  streaming: true,
-  callbackManager: CallbackManager.fromHandlers({
-    handleLLMNewToken: async (token) => {
-      process.stdout.write(token);
-    },
+const chat = new ChatOpenAI({ temperature: 0 });
+
+const response = await chat.call([
+  new HumanChatMessage(
+    "Translate this sentence from English to French. I love programming."
+  ),
+]);
+
+console.log(response);
+
+const responseB = await chat.call([
+  new SystemChatMessage(
+    "You are a helpful assistant that translates English to French."
+  ),
+  new HumanChatMessage("Translate: I love programming."),
+]);
+
+console.log(responseB);
+
+const responseC = await chat.generate([
+  [
+    new SystemChatMessage(
+      "You are a helpful assistant that translates English to French."
+    ),
+    new HumanChatMessage(
+      "Translate this sentence from English to French. I love programming."
+    ),
+  ],
+  [
+    new SystemChatMessage(
+      "You are a helpful assistant that translates English to French."
+    ),
+    new HumanChatMessage(
+      "Translate this sentence from English to French. I love artificial intelligence."
+    ),
+  ],
+]);
+
+console.log(responseC);
+
+const translationPrompt = ChatPromptTemplate.fromPromptMessages([
+  SystemMessagePromptTemplate.fromTemplate(
+    "You are a helpful assistant that translates {input_language} to {output_language}."
+  ),
+  HumanMessagePromptTemplate.fromTemplate("{text}"),
+]);
+
+const responseA = await chat.generatePrompt([
+  await translationPrompt.formatPromptValue({
+    input_language: "English",
+    output_language: "French",
+    text: "I love programming.",
   }),
-  // callbacks: [
-  //   {
-  //     handleLLMNewToken(token: string) {
-  //       process.stdout.write(token);
-  //     },
-  //   },
-  // ],
-});
+]);
 
-await chat.call("RADWIMPSとは");
-/*
-Verse 1
-Crystal clear and made with care
-Sparkling water on my lips, so refreshing in the air
-Fizzy bubbles, light and sweet
-My favorite beverage I can’t help but repeat
-
-Chorus
-A toast to sparkling water, I’m feeling so alive
-Let’s take a sip, and let’s take a drive
-A toast to sparkling water, it’s the best I’ve had in my life
-It’s the best way to start off the night
-
-Verse 2
-It’s the perfect drink to quench my thirst
-It’s the best way to stay hydrated, it’s the first
-A few ice cubes, a splash of lime
-It will make any day feel sublime
-...
-*/
+console.log(responseA);
