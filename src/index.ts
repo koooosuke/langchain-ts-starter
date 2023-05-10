@@ -1,28 +1,42 @@
 import { OpenAI } from "langchain";
-import { SerpAPI, Calculator } from "langchain/tools";
-import { initializeAgentExecutor } from "langchain/agents";
+import { CallbackManager } from "langchain/callbacks";
 
-const model = new OpenAI({ temperature: 0 });
-const tools = [
-  new SerpAPI(process.env.SERPAPI_API_KEY, {
-    location: "Tokyo,Japan",
-    hl: "ja",
-    gl: "jp",
+// To enable streaming, we pass in `streaming: true` to the LLM constructor.
+// Additionally, we pass in a handler for the `handleLLMNewToken` event.
+const chat = new OpenAI({
+  streaming: true,
+  callbackManager: CallbackManager.fromHandlers({
+    handleLLMNewToken: async (token) => {
+      process.stdout.write(token);
+    },
   }),
-  new Calculator(),
-];
+  // callbacks: [
+  //   {
+  //     handleLLMNewToken(token: string) {
+  //       process.stdout.write(token);
+  //     },
+  //   },
+  // ],
+});
 
-const executor = await initializeAgentExecutor(
-  tools,
-  model,
-  "zero-shot-react-description"
-);
+await chat.call("Write me a song about sparkling water.");
+/*
+Verse 1
+Crystal clear and made with care
+Sparkling water on my lips, so refreshing in the air
+Fizzy bubbles, light and sweet
+My favorite beverage I can’t help but repeat
 
-console.log("Loaded agent.");
+Chorus
+A toast to sparkling water, I’m feeling so alive
+Let’s take a sip, and let’s take a drive
+A toast to sparkling water, it’s the best I’ve had in my life
+It’s the best way to start off the night
 
-const input = "みそきんとは...??";
-console.log(`Executing with input "${input}"...`);
-
-const result = await executor.call({ input });
-
-console.log(`Got output ${result.output}`);
+Verse 2
+It’s the perfect drink to quench my thirst
+It’s the best way to stay hydrated, it’s the first
+A few ice cubes, a splash of lime
+It will make any day feel sublime
+...
+*/
