@@ -1,64 +1,22 @@
+import { AgentExecutor, ChatAgent } from "langchain/agents";
 import { ChatOpenAI } from "langchain/chat_models";
-import { HumanChatMessage, SystemChatMessage } from "langchain/schema";
-import {
-  SystemMessagePromptTemplate,
-  HumanMessagePromptTemplate,
-  ChatPromptTemplate,
-} from "langchain/prompts";
+import { SerpAPI } from "langchain/tools";
 
-const chat = new ChatOpenAI({ temperature: 0 });
-
-const response = await chat.call([
-  new HumanChatMessage(
-    "Translate this sentence from English to French. I love programming."
-  ),
-]);
-
-console.log(response);
-
-const responseB = await chat.call([
-  new SystemChatMessage(
-    "You are a helpful assistant that translates English to French."
-  ),
-  new HumanChatMessage("Translate: I love programming."),
-]);
-
-console.log(responseB);
-
-const responseC = await chat.generate([
-  [
-    new SystemChatMessage(
-      "You are a helpful assistant that translates English to French."
-    ),
-    new HumanChatMessage(
-      "Translate this sentence from English to French. I love programming."
-    ),
-  ],
-  [
-    new SystemChatMessage(
-      "You are a helpful assistant that translates English to French."
-    ),
-    new HumanChatMessage(
-      "Translate this sentence from English to French. I love artificial intelligence."
-    ),
-  ],
-]);
-
-console.log(responseC);
-
-const translationPrompt = ChatPromptTemplate.fromPromptMessages([
-  SystemMessagePromptTemplate.fromTemplate(
-    "You are a helpful assistant that translates {input_language} to {output_language}."
-  ),
-  HumanMessagePromptTemplate.fromTemplate("{text}"),
-]);
-
-const responseA = await chat.generatePrompt([
-  await translationPrompt.formatPromptValue({
-    input_language: "English",
-    output_language: "French",
-    text: "I love programming.",
+// Define the list of tools the agent can use
+const tools = [
+  new SerpAPI(process.env.SERPAPI_API_KEY, {
+    location: "Austin,Texas,United States",
+    hl: "en",
+    gl: "us",
   }),
-]);
+];
+// Create the agent from the chat model and the tools
+const agent = ChatAgent.fromLLMAndTools(new ChatOpenAI(), tools);
+// Create an executor, which calls to the agent until an answer is found
+const executor = AgentExecutor.fromAgentAndTools({ agent, tools });
 
-console.log(responseA);
+const responseG = await executor.run(
+  "How many people live in canada as of 2023?"
+);
+
+console.log(responseG);
