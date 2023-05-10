@@ -19,7 +19,7 @@ const chat = new OpenAI({
   // ],
 });
 
-await chat.call("Write me a song about sparkling water.");
+await chat.call("RADWIMPSとは");
 /*
 Verse 1
 Crystal clear and made with care
